@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nerd Society Onsite Flow</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: auto;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        .note {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #e8f4fc;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Onsite Check-in & Check-out Process</h1>
+
+    <div class="container">
+        <div class="mermaid">
+            sequenceDiagram
+            actor Khach as Khách hàng
+            actor Staff as Nhân viên
+            participant Admin as Admin Dashboard
+            participant DB as Booking System
+            participant Sapo as Sapo POS
+
+            Note over Khach, Staff: Giai đoạn 1: CHECK-IN
+
+            Khach->>Staff: 1. Đưa thông tin đặt phòng
+            Staff->>Admin: Tìm & Check-in Booking
+
+            rect rgb(255, 250, 240)
+            Note right of Staff: Kiểm tra loại phòng để phát Coin
+            alt Là khách Pod
+            Staff->>Khach: Phát Nerd Coin (1 hoặc 2 coin)
+            end
+            end
+
+            Admin->>DB: Start Time Recorded
+            Staff->>Khach: Dẫn khách vào chỗ ngồi
+
+            Note over Khach, Staff: ... Khách sử dụng dịch vụ ...
+
+            Note over Khach, Staff: Giai đoạn 2: CHECK-OUT (Xử lý phát sinh)
+
+            Khach->>Staff: Báo kết thúc / Check-out
+            Staff->>Admin: Click "Check-out" (End Time)
+
+            rect rgb(240, 248, 255)
+            Note right of Admin: Hệ thống tự động tính toán
+            Admin->>Admin: So sánh: Giờ Thực tế vs Giờ Đặt
+
+            alt Quá giờ (Overtime)
+            Admin->>Admin: Tính thời gian lố (phút/giờ)
+            Admin->>Admin: Tính Tiền phát sinh (Theo bảng giá)
+            Admin->>Staff: Cảnh báo "Khách quá giờ X phút"
+            Admin->>Staff: Cộng thêm tiền vào Bill
+            else Về sớm hoặc Đúng giờ
+            Admin->>Admin: Giữ nguyên giá Booking gốc
+            end
+
+            Admin->>Admin: Tổng tiền = (Giá Gốc + Phát sinh) - Cọc
+            end
+
+            Admin-->>Staff: Hiển thị Bill nháp & Số tiền cần thu
+
+            Staff->>Khach: Thông báo: "Bạn dùng thêm X phút, tổng tiền là..."
+            Staff->>Sapo: 2. Tạo đơn trên Sapo
+            Sapo->>Staff: Xuất phiếu thu
+            Staff->>Khach: Thanh toán & Ra về
+
+            Staff->>Admin: Hoàn tất thanh toán
+            Admin->>DB: Status: COMPLETED
+        </div>
+    </div>
+</body>
+
+</html>

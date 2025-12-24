@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nerd Society Booking Flow</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f0f0f0; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: auto; }
+        h1 { text-align: center; color: #333; }
+        .mermaid { display: flex; justify-content: center; }
+    </style>
+</head>
+<body>
+    <h1>Customer Booking Journey Flow</h1>
+    <div class="container">
+        <div class="mermaid">
+sequenceDiagram
+    actor Khach as Khách hàng
+    participant Home as Trang Chủ / Booking
+    participant Picker as Chọn Giờ (Time Picker)
+    participant Form as Nhập Thông Tin
+    participant Payment as Cổng Thanh Toán (QR)
+    participant Success as Trang Xác Nhận
+    participant System as Hệ Thống (Backend)
+
+    Note over Khach, Home: Bắt đầu hành trình
+
+    Khach->>Home: 1. Truy cập Website & Chọn Dịch vụ
+    Note right of Khach: Chọn Meeting Room hoặc Pod
+    
+    Home->>Khach: Hiển thị thông tin phòng & Giá
+    Khach->>Home: Click "Đặt ngay"
+
+    rect rgb(240, 248, 255)
+        Note right of Khach: Bước quan trọng: Kiểm tra lịch
+        Home->>Picker: 2. Chuyển đến chọn Ngày & Giờ
+        Khach->>Picker: Chọn Ngày
+        Picker->>System: Check Availability(Date, ServiceID)
+        System-->>Picker: Trả về các Slot đã bị Book
+        Picker->>Khach: Hiển thị các Slot trống (Disabled slot đã book)
+        
+        Khach->>Picker: Chọn Giờ Bắt đầu & Thời lượng
+        Note right of Khach: Hệ thống tự tính Giờ Kết thúc & Giá tiền
+    end
+
+    Khach->>Picker: Xác nhận Giờ -> Next
+
+    rect rgb(255, 250, 240)
+        Note right of Khach: Bước nhập liệu
+        Picker->>Form: 3. Hiển thị Form thông tin
+        Khach->>Form: Nhập Họ Tên, SĐT, Email (Optional), Note
+        Khach->>Form: Review lại Giá & Tiền Cọc (50%)
+        Khach->>Form: Submit "Thanh toán Cọc"
+    end
+
+    Form->>System: Validate & Create Pending Booking
+    System-->>Payment: Trả về QR Code chuyển khoản / Link TT
+    
+    rect rgb(255, 240, 245)
+        Note right of Khach: Bước thanh toán
+        Form->>Payment: 4. Chuyển hướng / Hiển thị QR
+        Khach->>Payment: Quét QR & Chuyển khoản
+        Payment->>System: Webhook: Payment Success
+        System->>System: Update Booking -> CONFIRMED
+    end
+
+    System-->>Success: Redirect to Success Page
+    Success->>Khach: 5. Hiển thị thông báo Thành công
+    Note right of Khach: Hiện chi tiết Booking, Mã, Time
+    System->>Khach: Gửi Email xác nhận (Background)
+        </div>
+    </div>
+</body>
+</html>

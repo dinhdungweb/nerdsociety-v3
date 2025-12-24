@@ -1,0 +1,13 @@
+{
+    "$schema": "https://openapi.vercel.sh/vercel.json",
+    "crons": [
+        {
+            "path": "/api/cron/cancel-pending-bookings",
+            "schedule": "*/5 * * * *"
+        },
+        {
+            "path": "/api/cron/checkin-reminders",
+            "schedule": "*/15 * * * *"
+        }
+    ]
+}

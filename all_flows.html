@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nerd Society - Booking System Flow</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #fff;
+            border-bottom: 2px solid #e94560;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            color: #e94560;
+            margin-top: 40px;
+        }
+
+        h3 {
+            color: #0f3460;
+            background: #fff;
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .flow-section {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .mermaid {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: #0f3460;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #1a1a2e;
+        }
+
+        th {
+            background: #e94560;
+            color: white;
+        }
+
+        tr:hover {
+            background: #1a1a2e;
+        }
+
+        .note {
+            background: #0f3460;
+            border-left: 4px solid #e94560;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        .badge-online {
+            background: #00d9ff;
+            color: #000;
+        }
+
+        .badge-onsite {
+            background: #e94560;
+            color: #fff;
+        }
+
+        .toc {
+            background: #0f3460;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .toc a {
+            color: #00d9ff;
+            text-decoration: none;
+            display: block;
+            padding: 5px 0;
+        }
+
+        .toc a:hover {
+            color: #e94560;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎮 NERD SOCIETY - HỆ THỐNG BOOKING</h1>
+        <p style="text-align: center; opacity: 0.7;">Tài liệu tổng hợp tất cả các Flow nghiệp vụ</p>
+
+        <div class="toc">
+            <strong>📋 Mục lục:</strong>
+            <a href="#flow1">1. Flow Tổng quan Hệ thống</a>
+            <a href="#flow2">2. Flow Khách hàng Book Online</a>
+            <a href="#flow3">3. Flow Check-in / Check-out tại Quầy</a>
+            <a href="#flow4">4. Flow Nhân viên Book hộ Khách (Walk-in)</a>
+            <a href="#pricing">5. Bảng giá & Công thức tính tiền</a>
+            <a href="#staff">6. Hướng dẫn thao tác Nhân viên</a>
+        </div>
+
+        <!-- FLOW 1: System Overview -->
+        <div id="flow1" class="flow-section">
+            <h2>1. Flow Tổng quan Hệ thống</h2>
+            <div class="mermaid">
+                graph TD
+                subgraph "KHÁCH HÀNG"
+                A([Khách Online]) -->|Truy cập Website| B[Trang Booking]
+                C([Khách Walk-in]) -->|Đến quầy| D[Nhân viên]
+                end
+
+                subgraph "BOOKING"
+                B -->|Chọn dịch vụ & Giờ| E{Check Slot trống}
+                E -->|Còn slot| F[Nhập thông tin]
+                E -->|Hết slot| G[Chọn giờ khác]
+                F --> H[Thanh toán Cọc 50%]
+                H --> I[Booking CONFIRMED]
+
+                D -->|Book hộ| J[Admin tạo Booking]
+                J --> I
+                end
+
+                subgraph "TẠI QUẦY"
+                I -->|Khách đến| K[Check-in]
+                K --> L[Sử dụng dịch vụ]
+                L --> M[Check-out]
+                M --> N{Tính tiền thực tế}
+                N --> O[Thu tiền còn lại qua Sapo]
+                O --> P[Booking COMPLETED]
+                end
+
+                subgraph "DATA"
+                DB[(Database)]
+                I --> DB
+                K --> DB
+                M --> DB
+                end
+            </div>
+        </div>
+
+        <!-- FLOW 2: Customer Online Booking -->
+        <div id="flow2" class="flow-section">
+            <h2>2. Flow Khách hàng Book Online <span class="badge badge-online">ONLINE</span></h2>
+            <div class="mermaid">
+                sequenceDiagram
+                actor Khach as Khách hàng
+                participant Web as Website
+                participant System as Backend
+                participant Payment as Cổng TT
+
+                Khach->>Web: 1. Chọn loại phòng (Meeting/Pod)
+                Web->>Khach: Hiển thị giá & mô tả
+
+                Khach->>Web: 2. Chọn Ngày
+                Web->>System: Check lịch trống
+                System-->>Web: Trả về slot đã book
+                Web->>Khach: Hiển thị các khung giờ trống
+
+                Khach->>Web: 3. Chọn Giờ bắt đầu + Thời lượng
+                Web->>Web: Tự động tính: Giờ kết thúc, Tổng tiền, Cọc 50%
+
+                Khach->>Web: 4. Nhập: Tên, SĐT, Ghi chú
+                Khach->>Web: Click "Đặt & Thanh toán"
+
+                Web->>System: Tạo Pending Booking
+                System->>Payment: Tạo QR thanh toán
+                Payment-->>Khach: 5. Hiển thị QR Cọc
+
+                Khach->>Payment: Chuyển khoản
+                Payment->>System: Webhook: Success
+                System->>System: Status = CONFIRMED
+
+                System-->>Khach: 6. Thông báo thành công + Mã booking
+            </div>
+        </div>
+
+        <!-- FLOW 3: Onsite Check-in/out -->
+        <div id="flow3" class="flow-section">
+            <h2>3. Flow Check-in / Check-out tại Quầy <span class="badge badge-onsite">ONSITE</span></h2>
+            <div class="mermaid">
+                sequenceDiagram
+                actor Khach as Khách
+                actor Staff as Nhân viên
+                participant Admin as Admin
+                participant Sapo as Sapo POS
+
+                rect rgb(230, 245, 255)
+                Note over Khach, Admin: CHECK-IN
+                Khach->>Staff: Cho em xin tên/SĐT
+                Staff->>Admin: Tìm booking
+                Admin-->>Staff: Hiển thị chi tiết
+                Staff->>Admin: Click [Check-in]
+                Note right of Admin: Ghi Start Time
+
+                alt Là khách Pod
+                Staff->>Khach: Phát Nerd Coin
+                end
+                Staff->>Khach: Dẫn vào phòng
+                end
+
+                Note over Khach: ... Sử dụng dịch vụ ...
+
+                rect rgb(255, 240, 245)
+                Note over Khach, Sapo: CHECK-OUT
+                Khach->>Staff: Em check-out
+                Staff->>Admin: Click [Check-out]
+                Note right of Admin: Ghi End Time
+
+                Admin->>Admin: So sánh: Thực tế vs Đặt trước
+
+                alt Quá giờ
+                Admin-->>Staff: Cảnh báo: Phát sinh +X phút
+                Admin->>Admin: Tính tiền phụ trội
+                end
+
+                Admin-->>Staff: Bill: Tổng - Cọc = Còn lại
+                Staff->>Sapo: Tạo đơn thu tiền
+                Staff->>Khach: Thu tiền còn lại
+                Staff->>Admin: Click [Hoàn tất]
+                end
+            </div>
+        </div>
+
+        <!-- FLOW 4: Staff-assisted Walk-in -->
+        <div id="flow4" class="flow-section">
+            <h2>4. Flow Nhân viên Book hộ Khách <span class="badge badge-onsite">WALK-IN</span></h2>
+            <div class="mermaid">
+                sequenceDiagram
+                actor Khach as Khách Walk-in
+                actor Staff as Nhân viên
+                participant Admin as Admin
+
+                Khach->>Staff: Em muốn ngồi Pod/Meeting
+                Staff->>Admin: Mở: Bookings > Tạo mới
+
+                rect rgb(255, 250, 230)
+                Note right of Staff: NHẬP THÔNG TIN
+                Staff->>Admin: Loại phòng
+                Staff->>Admin: Ngày + Giờ bắt đầu
+                Staff->>Admin: Thời lượng dự kiến
+                Staff->>Admin: Tên + SĐT khách
+                Staff->>Admin: Nguồn: "Tại quầy"
+                Staff->>Admin: Trạng thái cọc
+                end
+
+                Staff->>Admin: Click [Tạo Booking]
+
+                alt Thu cọc tiền mặt
+                Staff->>Khach: Thu cọc 50%
+                Staff->>Admin: Ghi nhận: Đã cọc
+                else Không cọc
+                Staff->>Admin: Ghi nhận: Chưa cọc
+                end
+
+                Staff->>Admin: Click [Check-in] ngay
+                Staff->>Khach: Dẫn vào phòng
+                Note over Staff: Check-out như flow #3
+            </div>
+        </div>
+
+        <!-- PRICING -->
+        <div id="pricing" class="flow-section">
+            <h2>5. Bảng giá & Công thức tính tiền</h2>
+
+            <h3>Meeting Room</h3>
+            <div class="note" style="margin-bottom: 15px;">
+                <strong>📍 Có 2 phòng Meeting:</strong><br>
+                • <strong>Meeting Room 1 - Bàn dài:</strong> Phù hợp họp nhóm lớn, thuyết trình, workshop<br>
+                • <strong>Meeting Room 2 - Bàn tròn:</strong> Phù hợp họp nhóm nhỏ, thảo luận<br><br>
+                <em>💡 Giá bán CHUNG cho cả 2 phòng, tính theo số lượng người:</em>
+            </div>
+            <table>
+                <tr>
+                    <th>Số người</th>
+                    <th>Giá/giờ</th>
+                    <th>Ghi chú</th>
+                </tr>
+                <tr>
+                    <td>0 - 8 người</td>
+                    <td>80.000đ</td>
+                    <td>Tính theo block 1h</td>
+                </tr>
+                <tr>
+                    <td>8 - 20 người</td>
+                    <td>100.000đ</td>
+                    <td>Tính theo block 1h</td>
+                </tr>
+            </table>
+
+            <h3>Pod</h3>
+            <table>
+                <tr>
+                    <th>Loại Pod</th>
+                    <th>Giờ đầu</th>
+                    <th>Từ giờ 2 (tính phút)</th>
+                    <th>Nerd Coin</th>
+                </tr>
+                <tr>
+                    <td>Mono Pod (1 người)</td>
+                    <td>19.000đ</td>
+                    <td>15.000đ/h</td>
+                    <td>1 coin</td>
+                </tr>
+                <tr>
+                    <td>Multi Pod (2 người)</td>
+                    <td>29.000đ</td>
+                    <td>25.000đ/h</td>
+                    <td>2 coin</td>
+                </tr>
+            </table>
+
+            <div class="note">
+                <strong>🧮 Công thức Pod:</strong><br>
+                <code>Tổng = Giá_giờ_đầu + (Số_phút_sau / 60) × Giá_giờ_sau</code><br><br>
+                <strong>Ví dụ:</strong> Mono Pod 1h30p = 19k + (30/60 × 15k) = 19k + 7.5k = <strong>26.500đ</strong>
+            </div>
+        </div>
+
+        <!-- STAFF GUIDE -->
+        <div id="staff" class="flow-section">
+            <h2>6. Hướng dẫn thao tác Nhân viên</h2>
+
+            <h3>Khách CÓ booking</h3>
+            <table>
+                <tr>
+                    <th>Thao tác</th>
+                    <th>Cần nhập gì?</th>
+                </tr>
+                <tr>
+                    <td>Check-in</td>
+                    <td>Chỉ click nút <strong>[Check-in]</strong> - Không nhập gì</td>
+                </tr>
+                <tr>
+                    <td>Check-out</td>
+                    <td>Chỉ click nút <strong>[Check-out]</strong> + <strong>[Hoàn tất]</strong></td>
+                </tr>
+            </table>
+
+            <h3>Khách Walk-in (Book hộ)</h3>
+            <table>
+                <tr>
+                    <th>Trường</th>
+                    <th>Bắt buộc</th>
+                </tr>
+                <tr>
+                    <td>Loại phòng</td>
+                    <td>✅</td>
+                </tr>
+                <tr>
+                    <td>Ngày + Giờ bắt đầu</td>
+                    <td>✅</td>
+                </tr>
+                <tr>
+                    <td>Thời lượng dự kiến</td>
+                    <td>✅</td>
+                </tr>
+                <tr>
+                    <td>Tên khách</td>
+                    <td>✅</td>
+                </tr>
+                <tr>
+                    <td>SĐT</td>
+                    <td>✅</td>
+                </tr>
+                <tr>
+                    <td>Số người (Meeting)</td>
+                    <td>✅ (nếu Meeting)</td>
+                </tr>
+                <tr>
+                    <td>Nguồn đặt</td>
+                    <td>Optional</td>
+                </tr>
+                <tr>
+                    <td>Ghi chú</td>
+                    <td>Optional</td>
+                </tr>
+            </table>
+        </div>
+
+    </div>
+</body>
+
+</html>
