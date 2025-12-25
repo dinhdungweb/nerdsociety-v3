@@ -30,6 +30,7 @@ const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>
 // Feature interface
 export interface AboutFeature {
     icon: string
+    image?: string
     title: string
     description: string
 }
@@ -119,7 +120,7 @@ export default function AboutNerd({
                 {/* Features Grid */}
                 <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
                     {features.map((feature, index) => {
-                        const IconComponent = iconMap[feature.icon] || BookOpenIcon
+                        const IconComponent = iconMap[feature.icon || ''] || BookOpenIcon
                         return (
                             <motion.div
                                 key={feature.title + index}
@@ -129,8 +130,17 @@ export default function AboutNerd({
                                 transition={{ delay: index * 0.1 }}
                                 className="group rounded-3xl border border-neutral-200 bg-white p-8 transition-all hover:border-primary-200 hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-800/50 dark:hover:border-primary-700"
                             >
-                                <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-primary-100 dark:bg-primary-900/50">
-                                    <IconComponent className="size-6 text-primary-600 dark:text-primary-400" />
+                                <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-primary-100 dark:bg-primary-900/50 overflow-hidden">
+                                    {feature.image ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img
+                                            src={feature.image}
+                                            alt={feature.title}
+                                            className="size-full object-cover"
+                                        />
+                                    ) : (
+                                        <IconComponent className="size-6 text-primary-600 dark:text-primary-400" />
+                                    )}
                                 </div>
                                 <h3 className="text-xl font-semibold text-neutral-900 dark:text-white">
                                     {feature.title}

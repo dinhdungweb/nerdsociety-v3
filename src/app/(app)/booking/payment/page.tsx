@@ -132,13 +132,26 @@ const CheckoutContent = () => {
                 const res = await fetch(`/api/booking/${bookingId}`)
                 if (res.ok) {
                     const data = await res.json()
+                    // Validate status logic
+                    if (data.booking.status === 'CANCELLED') {
+                        toast.error('Giao dịch đã bị hủy hoặc hết hạn')
+                        router.push('/booking')
+                        return
+                    }
+
                     setBookingInfo(data.booking)
 
-                    // Calculate remaining time based on createdAt (booking creation time)
+                    // Calculate remaining time based on Server Time (not Client Time) to ensure sync
                     const createdAt = new Date(data.booking.createdAt)
-                    const now = new Date()
-                    const elapsedSeconds = Math.floor((now.getTime() - createdAt.getTime()) / 1000)
-                    const remainingSeconds = Math.max(0, 5 * 60 - elapsedSeconds)
+                    const serverTime = new Date(data.serverTime) // Use server time from API
+
+                    // Time elapsed since creation (using server clock as reference point A and B would cancel out, 
+                    // but here we want (createdAt + 5m) - serverNow)
+                    // Actually simplier: ExpirationTime = createdAt + 5m. Remaining = ExpirationTime - ServerNow.
+                    const expirationTime = new Date(createdAt.getTime() + 5 * 60 * 1000)
+                    const remainingMs = expirationTime.getTime() - serverTime.getTime()
+                    const remainingSeconds = Math.max(0, Math.floor(remainingMs / 1000))
+
                     setCountdown(remainingSeconds)
 
                     // If payment already selected AND user is on QR step (via URL param), restore that state
@@ -194,13 +207,41 @@ const CheckoutContent = () => {
         return () => clearInterval(timer)
     }, [showQR, paymentInfo])
 
+    // Polling to sync status with server (e.g. if Admin cancels or Cron cancels)
+    useEffect(() => {
+        if (!bookingId || processing || confirming) return
+
+        const statusInterval = setInterval(async () => {
+            // Optimization: Don't poll if tab is not active
+            if (document.hidden) return
+
+            try {
+                const res = await fetch(`/api/booking/${bookingId}`)
+                if (res.ok) {
+                    const data = await res.json()
+                    // Check if cancelled externally
+                    if (data.booking.status === 'CANCELLED') {
+                        toast.error('Đơn đặt phòng đã bị hủy hoặc hết hạn!')
+                        router.push('/booking')
+                        clearInterval(statusInterval)
+                    }
+                }
+            } catch (error) {
+                console.error('Error polling status:', error)
+            }
+        }, 5000) // Check every 5 seconds
+
+        return () => clearInterval(statusInterval)
+    }, [bookingId, processing, confirming, router])
+
     // Effect to handle countdown expiration independently of QR view
     // (Optional: Redirect or show error if time expires while on page)
     useEffect(() => {
-        if (countdown === 0 && !processing && !confirming) {
-            // We can optionally auto-refresh status here or show a message
+        if (countdown === 0 && !processing && !confirming && bookingInfo) {
+            // Just show message, the polling above will catch the status change shortly after cron runs
+            // or we can force a check.
         }
-    }, [countdown, processing, confirming])
+    }, [countdown, processing, confirming, bookingInfo])
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60)

@@ -22,6 +22,7 @@ import { usePermissions } from '@/contexts/PermissionsContext'
 // Feature interface
 interface AboutFeature {
     icon: string
+    image?: string
     title: string
     description: string
 }
@@ -152,6 +153,7 @@ export default function AdminContentPage() {
     const [saving, setSaving] = useState(false)
     const [uploadingImage, setUploadingImage] = useState(false)
     const [showMediaPicker, setShowMediaPicker] = useState(false)
+    const [mediaPickerTarget, setMediaPickerTarget] = useState<{ type: 'hero' | 'feature', index?: number }>({ type: 'hero' })
     const [showBannerMediaPicker, setShowBannerMediaPicker] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [features, setFeatures] = useState<AboutFeature[]>(defaultFeatures)
@@ -325,6 +327,36 @@ export default function AdminContentPage() {
 
     const handleRemoveImage = () => {
         handleChange('heroBackgroundImage', '')
+    }
+
+    const handleFeatureImageUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files
+        if (!files || files.length === 0) return
+
+        setUploadingImage(true)
+        try {
+            const formData = new FormData()
+            formData.append('files', files[0])
+
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            })
+
+            const data = await res.json()
+            if (res.ok && data.url) {
+                updateFeature(index, 'image', data.url)
+                toast.success('Đã upload ảnh!')
+            } else {
+                toast.error(data.error || 'Lỗi khi upload ảnh')
+            }
+        } catch (error) {
+            toast.error('Lỗi khi upload ảnh!')
+        } finally {
+            setUploadingImage(false)
+            // Reset input
+            e.target.value = ''
+        }
     }
 
     // Hero Stats CRUD handlers
@@ -696,7 +728,10 @@ export default function AdminContentPage() {
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => setShowMediaPicker(true)}
+                                        onClick={() => {
+                                            setMediaPickerTarget({ type: 'hero' })
+                                            setShowMediaPicker(true)
+                                        }}
                                         className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
                                     >
                                         <FolderOpenIcon className="size-5" />
@@ -711,10 +746,21 @@ export default function AdminContentPage() {
                                         onClose={() => setShowMediaPicker(false)}
                                         onSelect={(urls) => {
                                             if (urls.length > 0) {
-                                                handleChange('heroBackgroundImage', urls[0])
+                                                if (mediaPickerTarget.type === 'hero') {
+                                                    handleChange('heroBackgroundImage', urls[0])
+                                                } else if (mediaPickerTarget.type === 'feature' && typeof mediaPickerTarget.index === 'number') {
+                                                    updateFeature(mediaPickerTarget.index, 'image', urls[0])
+                                                }
                                             }
+                                            setShowMediaPicker(false)
                                         }}
-                                        selectedUrls={settings.heroBackgroundImage ? [settings.heroBackgroundImage] : []}
+                                        selectedUrls={
+                                            mediaPickerTarget.type === 'hero' && settings.heroBackgroundImage
+                                                ? [settings.heroBackgroundImage]
+                                                : mediaPickerTarget.type === 'feature' && typeof mediaPickerTarget.index === 'number' && features[mediaPickerTarget.index].image
+                                                    ? [features[mediaPickerTarget.index].image!]
+                                                    : []
+                                        }
                                     />
                                 </div>
                             </div>
@@ -809,39 +855,112 @@ export default function AdminContentPage() {
                                                 </button>
                                             </div>
                                         </div>
-                                        <div className="grid gap-3 sm:grid-cols-3">
-                                            <div>
-                                                <label className="mb-1 block text-xs text-neutral-500">Icon</label>
-                                                <select
-                                                    value={feature.icon}
-                                                    onChange={e => updateFeature(index, 'icon', e.target.value)}
-                                                    className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm transition-colors focus:border-primary-500 focus:outline-none dark:border-neutral-600 dark:bg-neutral-800 dark:text-white"
-                                                >
-                                                    {availableIcons.map(icon => (
-                                                        <option key={icon.value} value={icon.value}>{icon.label}</option>
-                                                    ))}
-                                                </select>
+
+                                        <div className="space-y-4">
+                                            {/* Row 1: Title & Icon */}
+                                            <div className="grid gap-4 md:grid-cols-3">
+                                                <div className="md:col-span-2">
+                                                    <label className="mb-1 block text-xs font-medium text-neutral-500">Tiêu đề</label>
+                                                    <input
+                                                        type="text"
+                                                        value={feature.title}
+                                                        onChange={e => updateFeature(index, 'title', e.target.value)}
+                                                        className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none dark:border-neutral-600 dark:bg-neutral-700 dark:text-white"
+                                                        placeholder="Nhập tiêu đề"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-xs font-medium text-neutral-500">Icon</label>
+                                                    <select
+                                                        value={feature.icon}
+                                                        onChange={e => updateFeature(index, 'icon', e.target.value)}
+                                                        className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none dark:border-neutral-600 dark:bg-neutral-700 dark:text-white"
+                                                    >
+                                                        {availableIcons.map(icon => (
+                                                            <option key={icon.value} value={icon.value}>{icon.label}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
                                             </div>
-                                            <div className="sm:col-span-2">
-                                                <label className="mb-1 block text-xs text-neutral-500">Tiêu đề</label>
+
+                                            {/* Row 2: Description */}
+                                            <div>
+                                                <label className="mb-1 block text-xs font-medium text-neutral-500">Mô tả</label>
                                                 <input
                                                     type="text"
-                                                    value={feature.title}
-                                                    onChange={e => updateFeature(index, 'title', e.target.value)}
-                                                    placeholder="VD: Wifi tốc độ cao"
-                                                    className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm transition-colors focus:border-primary-500 focus:outline-none dark:border-neutral-600 dark:bg-neutral-800 dark:text-white"
+                                                    value={feature.description}
+                                                    onChange={e => updateFeature(index, 'description', e.target.value)}
+                                                    className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none dark:border-neutral-600 dark:bg-neutral-700 dark:text-white"
+                                                    placeholder="Nhập mô tả ngắn"
                                                 />
                                             </div>
-                                        </div>
-                                        <div className="mt-3">
-                                            <label className="mb-1 block text-xs text-neutral-500">Mô tả</label>
-                                            <input
-                                                type="text"
-                                                value={feature.description}
-                                                onChange={e => updateFeature(index, 'description', e.target.value)}
-                                                placeholder="Mô tả ngắn về tính năng..."
-                                                className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm transition-colors focus:border-primary-500 focus:outline-none dark:border-neutral-600 dark:bg-neutral-800 dark:text-white"
-                                            />
+
+                                            {/* Row 3: Image Upload */}
+                                            <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50/50 p-4 dark:border-neutral-700 dark:bg-neutral-800/50">
+                                                <label className="mb-3 block text-xs font-medium text-neutral-500">Ảnh minh họa (Thay thế icon)</label>
+                                                <div className="flex items-start gap-4">
+                                                    {/* Preview Box */}
+                                                    <div className="relative size-16 flex-shrink-0 overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-800">
+                                                        {feature.image ? (
+                                                            <>
+                                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                                <img
+                                                                    src={feature.image}
+                                                                    alt="Preview"
+                                                                    className="size-full object-cover"
+                                                                />
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => updateFeature(index, 'image', '')}
+                                                                    className="absolute right-0.5 top-0.5 rounded-full bg-white/80 p-0.5 text-red-500 shadow-sm backdrop-blur-sm hover:bg-white hover:text-red-600"
+                                                                >
+                                                                    <TrashIcon className="size-3" />
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <div className="flex size-full items-center justify-center text-neutral-300">
+                                                                <PhotoIcon className="size-6" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Actions */}
+                                                    <div className="flex-1 space-y-2">
+                                                        <div className="flex flex-wrap gap-2">
+                                                            <input
+                                                                type="file"
+                                                                id={`feature-file-${index}`}
+                                                                accept="image/*"
+                                                                className="hidden"
+                                                                onChange={(e) => handleFeatureImageUpload(index, e)}
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => document.getElementById(`feature-file-${index}`)?.click()}
+                                                                disabled={uploadingImage}
+                                                                className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 shadow-sm hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-600"
+                                                            >
+                                                                <CloudArrowUpIcon className="size-4" />
+                                                                Tải ảnh lên
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setMediaPickerTarget({ type: 'feature', index })
+                                                                    setShowMediaPicker(true)
+                                                                }}
+                                                                className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 shadow-sm hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-600"
+                                                            >
+                                                                <FolderOpenIcon className="size-4" />
+                                                                Chọn thư viện
+                                                            </button>
+                                                        </div>
+                                                        <p className="text-[10px] text-neutral-400">
+                                                            Khuyến nghị: Ảnh vuông hoặc icon PNG trong suốt
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}

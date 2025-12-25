@@ -30,7 +30,7 @@ export default async function BookingLayout({ children }: { children: React.Reac
                 />
                 {children}
             </main>
-            <FooterNerd logoUrl={config.siteLogo} />
+            <FooterNerd logoUrl={config.siteLogoLight || config.siteLogo} />
         </>
     )
 }

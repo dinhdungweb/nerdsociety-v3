@@ -41,6 +41,7 @@ export async function GET(
         }
 
         return NextResponse.json({
+            serverTime: new Date(),
             booking: {
                 id: booking.id,
                 bookingCode: booking.bookingCode,
