@@ -42,6 +42,25 @@ export async function POST(request: NextRequest) {
             )
         }
 
+        // Check if booking is cancelled
+        if (booking.status === 'CANCELLED') {
+            return NextResponse.json(
+                { error: 'Booking has been cancelled' },
+                { status: 400 }
+            )
+        }
+
+        // Check if expired (createdAt > 5 mins + 1 min buffer)
+        // This is a safety check in case Cron hasn't run yet or user is trying to bypass
+        const expirationTime = new Date(booking.createdAt)
+        expirationTime.setMinutes(expirationTime.getMinutes() + 6) // 5 mins + 1 min buffer
+        if (new Date() > expirationTime) {
+            return NextResponse.json(
+                { error: 'Booking has expired' },
+                { status: 400 }
+            )
+        }
+
         // Keep status as PENDING, just mark that user has reported payment
         // Admin will manually verify and change to CONFIRMED
         const updatedBooking = await prisma.booking.update({

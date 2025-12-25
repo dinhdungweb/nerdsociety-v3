@@ -134,18 +134,12 @@ const CheckoutContent = () => {
                     const data = await res.json()
                     setBookingInfo(data.booking)
 
-                    // Calculate remaining time based on paymentStartedAt (when user selected payment)
-                    // If paymentStartedAt is not set yet, show full 5 minutes
-                    if (data.booking.paymentStartedAt) {
-                        const paymentStarted = new Date(data.booking.paymentStartedAt)
-                        const now = new Date()
-                        const elapsedSeconds = Math.floor((now.getTime() - paymentStarted.getTime()) / 1000)
-                        const remainingSeconds = Math.max(0, 5 * 60 - elapsedSeconds)
-                        setCountdown(remainingSeconds)
-                    } else {
-                        // Timer hasn't started yet - show full 5 minutes
-                        setCountdown(5 * 60)
-                    }
+                    // Calculate remaining time based on createdAt (booking creation time)
+                    const createdAt = new Date(data.booking.createdAt)
+                    const now = new Date()
+                    const elapsedSeconds = Math.floor((now.getTime() - createdAt.getTime()) / 1000)
+                    const remainingSeconds = Math.max(0, 5 * 60 - elapsedSeconds)
+                    setCountdown(remainingSeconds)
 
                     // If payment already selected AND user is on QR step (via URL param), restore that state
                     if (data.booking.payment?.method) {
@@ -199,6 +193,14 @@ const CheckoutContent = () => {
 
         return () => clearInterval(timer)
     }, [showQR, paymentInfo])
+
+    // Effect to handle countdown expiration independently of QR view
+    // (Optional: Redirect or show error if time expires while on page)
+    useEffect(() => {
+        if (countdown === 0 && !processing && !confirming) {
+            // We can optionally auto-refresh status here or show a message
+        }
+    }, [countdown, processing, confirming])
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60)
@@ -283,7 +285,7 @@ const CheckoutContent = () => {
     const handleBack = () => {
         setShowQR(false)
         setPaymentInfo(null)
-        setCountdown(5 * 60)
+        // Timer continues running based on createdAt
         // Remove step param from URL
         router.replace(`/booking/payment?id=${bookingId}`, { scroll: false })
     }
@@ -402,11 +404,13 @@ const CheckoutContent = () => {
                                 {/* Confirm Button */}
                                 <Button
                                     onClick={handleConfirmPayment}
-                                    disabled={confirming}
+                                    disabled={confirming || countdown === 0}
                                     className="w-full"
                                 >
                                     <CheckCircleIcon className="mr-2 size-5" />
-                                    {confirming ? 'Đang xác nhận...' : 'Tôi đã thanh toán'}
+                                    {countdown === 0
+                                        ? 'Hết thời gian giữ chỗ'
+                                        : confirming ? 'Đang xác nhận...' : 'Tôi đã thanh toán'}
                                 </Button>
                             </div>
                         </div>

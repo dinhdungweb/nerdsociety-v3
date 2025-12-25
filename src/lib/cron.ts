@@ -21,9 +21,7 @@ async function cancelPendingBookings() {
             where: {
                 status: 'PENDING',
                 depositStatus: 'PENDING',
-                // Only cancel if payment process has started (customer selected payment method)
-                paymentStartedAt: {
-                    not: null,
+                createdAt: {
                     lt: timeoutThreshold
                 }
             },
