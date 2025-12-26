@@ -64,7 +64,7 @@ export default async function BookingDetailsPage({
     bookingStart.setHours(hours, minutes, 0, 0)
     const now = new Date()
     const minutesToStart = differenceInMinutes(bookingStart, now)
-    const canCancel = ['PENDING', 'CONFIRMED'].includes(booking.status) && minutesToStart >= 30
+    const canCancel = ['PENDING', 'CONFIRMED'].includes(booking.status) && minutesToStart >= 360
     const canReschedule = booking.status === 'CONFIRMED' && minutesToStart >= 60
 
     return (
@@ -129,6 +129,16 @@ export default async function BookingDetailsPage({
                                 </div>
                             </div>
                         </div>
+
+                        {/* Note */}
+                        {booking.note && (
+                            <div className="mt-6 border-t border-neutral-100 pt-6 dark:border-neutral-800">
+                                <h4 className="mb-2 text-sm font-medium text-neutral-900 dark:text-white">GHI CHÚ</h4>
+                                <div className="rounded-lg bg-neutral-50 p-4 text-sm text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+                                    <p className="whitespace-pre-wrap">{booking.note}</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -248,7 +258,7 @@ export default async function BookingDetailsPage({
                             />
                             {canCancel && (
                                 <p className="mt-2 text-xs text-neutral-400 dark:text-neutral-500">
-                                    Có thể hủy trước 30 phút
+                                    Có thể hủy trước 6 tiếng
                                 </p>
                             )}
                         </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/shared/Button'
-import { UsersIcon } from '@heroicons/react/24/outline'
+import { ArrowPathIcon, ExclamationTriangleIcon, InformationCircleIcon, UsersIcon } from '@heroicons/react/24/outline'
 import { ServiceType } from '@prisma/client'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
@@ -11,7 +11,7 @@ import { registerLocale } from 'react-datepicker'
 import TimeSelect from './TimeSelect'
 import DateInputPopover from './DateInputPopover'
 import useSWR from 'swr'
-import { ArrowPathIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 const postFetcher = (url: string, { arg }: { arg: any }) =>
@@ -533,9 +533,25 @@ export default function BookingFormV2({
                 >
                     {loading ? 'Đang xử lý...' : 'Thanh toán cọc & Giữ phòng'}
                 </Button>
-                <p className="mt-3 text-center text-xs text-neutral-500 dark:text-neutral-400">
-                    Phòng sẽ được giữ sau khi bạn thanh toán cọc 50%
-                </p>
+
+                <div className="mt-4 rounded-xl bg-neutral-50 p-4 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+                    <div className="flex items-start gap-2.5">
+                        <InformationCircleIcon className="mt-0.5 size-4 shrink-0 text-neutral-400" />
+                        <div className="space-y-2">
+                            <p className="font-medium text-neutral-900 dark:text-white">
+                                Phòng sẽ được giữ sau khi bạn thanh toán cọc 50%
+                            </p>
+                            <ul className="list-disc space-y-1 pl-3 text-[11px] leading-relaxed opacity-90">
+                                <li>
+                                    Huỷ/đổi lịch trước giờ bắt đầu <span className="font-medium text-neutral-700 dark:text-neutral-300">6 tiếng</span>: vui lòng liên hệ page để được lưu cọc cho lần sau.
+                                </li>
+                                <li>
+                                    Huỷ trong vòng <span className="font-medium text-neutral-700 dark:text-neutral-300">6 tiếng</span> hoặc không đến: <span className="font-medium text-red-600 dark:text-red-400">không hoàn tiền cọc</span>.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     )

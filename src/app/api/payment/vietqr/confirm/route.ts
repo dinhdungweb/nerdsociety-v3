@@ -34,29 +34,18 @@ export async function POST(request: NextRequest) {
             )
         }
 
+        // Check if booking is cancelled or completed
+        if (booking.status === 'CANCELLED' || booking.status === 'COMPLETED') {
+            return NextResponse.json(
+                { error: 'Booking has been cancelled or completed' },
+                { status: 400 }
+            )
+        }
+
         // Check if already confirmed
         if (booking.depositPaidAt) {
             return NextResponse.json(
                 { error: 'Deposit already confirmed' },
-                { status: 400 }
-            )
-        }
-
-        // Check if booking is cancelled
-        if (booking.status === 'CANCELLED') {
-            return NextResponse.json(
-                { error: 'Booking has been cancelled' },
-                { status: 400 }
-            )
-        }
-
-        // Check if expired (createdAt > 5 mins + 1 min buffer)
-        // This is a safety check in case Cron hasn't run yet or user is trying to bypass
-        const expirationTime = new Date(booking.createdAt)
-        expirationTime.setMinutes(expirationTime.getMinutes() + 6) // 5 mins + 1 min buffer
-        if (new Date() > expirationTime) {
-            return NextResponse.json(
-                { error: 'Booking has expired' },
                 { status: 400 }
             )
         }

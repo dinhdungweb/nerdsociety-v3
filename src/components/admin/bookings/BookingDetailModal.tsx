@@ -1,6 +1,6 @@
 import { Fragment, useState, useEffect } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
-import { XMarkIcon, ClockIcon, CurrencyDollarIcon, UserIcon, MapPinIcon, CheckCircleIcon, BoltIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, ClockIcon, CurrencyDollarIcon, UserIcon, MapPinIcon, CheckCircleIcon, BoltIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 
@@ -331,6 +331,18 @@ export default function BookingDetailModal({ open, setOpen, booking, onRefresh }
                                                     </div>
                                                 </div>
                                                 <p className="text-xs text-amber-600 mt-2 italic">*Vui lòng thu tiền mặt khoản còn thiếu trước khi xác nhận.</p>
+                                            </div>
+                                        )}
+
+                                        {/* Note */}
+                                        {booking.note && (
+                                            <div className="col-span-1 sm:col-span-2 space-y-3">
+                                                <h4 className="font-medium text-neutral-900 dark:text-white flex items-center gap-2">
+                                                    <DocumentTextIcon className="size-4" /> Ghi chú
+                                                </h4>
+                                                <div className="text-sm text-neutral-600 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-800/50 p-3 rounded-lg whitespace-pre-wrap border border-neutral-100 dark:border-neutral-800">
+                                                    {booking.note}
+                                                </div>
                                             </div>
                                         )}
                                     </div>

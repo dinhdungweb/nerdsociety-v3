@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
+import { sendBookingCancelledEmail } from '@/lib/email'
 
 // Configuration
 const PENDING_TIMEOUT_MINUTES = 5 // Hủy booking PENDING sau 5 phút
@@ -23,8 +24,8 @@ export async function GET(request: Request) {
         const timeoutThreshold = new Date()
         timeoutThreshold.setMinutes(timeoutThreshold.getMinutes() - PENDING_TIMEOUT_MINUTES)
 
-        // Find and cancel PENDING bookings older than threshold
-        const result = await prisma.booking.updateMany({
+        // 1. Find PENDING bookings older than threshold
+        const pendingBookings = await prisma.booking.findMany({
             where: {
                 status: 'PENDING',
                 depositStatus: 'PENDING',
@@ -32,17 +33,42 @@ export async function GET(request: Request) {
                     lt: timeoutThreshold
                 }
             },
-            data: {
-                status: 'CANCELLED',
-                note: `Tự động hủy do không thanh toán cọc sau ${PENDING_TIMEOUT_MINUTES} phút`
+            include: {
+                user: true,
+                location: true,
+                room: true
             }
         })
 
-        console.log(`[Cron] Auto-cancelled ${result.count} pending bookings`)
+        // 2. Cancel bookings and send emails
+        let cancelledCount = 0
+
+        for (const booking of pendingBookings) {
+            try {
+                // Update stats
+                const cancellationNote = `Tự động hủy do không thanh toán cọc sau ${PENDING_TIMEOUT_MINUTES} phút`
+                await prisma.booking.update({
+                    where: { id: booking.id },
+                    data: {
+                        status: 'CANCELLED',
+                        note: booking.note ? `${booking.note}\n---\n${cancellationNote}` : cancellationNote
+                    }
+                })
+
+                // Send Email to Customer
+                await sendBookingCancelledEmail(booking)
+
+                cancelledCount++
+            } catch (err) {
+                console.error(`[Cron] Error cancelling booking ${booking.id}:`, err)
+            }
+        }
+
+        console.log(`[Cron] Auto-cancelled ${cancelledCount} pending bookings`)
 
         return NextResponse.json({
             success: true,
-            cancelled: result.count,
+            cancelled: cancelledCount,
             timestamp: new Date().toISOString()
         })
 

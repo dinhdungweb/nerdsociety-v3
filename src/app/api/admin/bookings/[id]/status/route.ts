@@ -214,10 +214,14 @@ export async function POST(
                 return NextResponse.json(booking)
             }
 
+            const adminName = session.user.name || session.user.email || 'Admin'
+            const cancellationNote = `Hủy bởi Admin ${adminName} lúc ${now.toLocaleString('vi-VN')}`
+
             const updatedBooking = await prisma.booking.update({
                 where: { id },
                 data: {
-                    status: 'CANCELLED'
+                    status: 'CANCELLED',
+                    note: booking.note ? `${booking.note}\n---\n${cancellationNote}` : cancellationNote
                 }
             })
 
